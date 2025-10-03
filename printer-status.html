@@ -132,6 +132,29 @@
             color: white;
         }
 
+        .location-btn {
+            padding: 10px 25px;
+            border: none;
+            background: white;
+            color: #522D80;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .location-btn:hover {
+            background: #522D80;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .location-btn.active {
+            background: #522D80;
+            color: white;
+        }
+
         .printers-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -329,6 +352,12 @@
             <button class="filter-btn" data-filter="offline">Offline</button>
         </div>
 
+        <div class="filters" style="margin-top: 10px;">
+            <button class="location-btn active" data-location="all">All Locations</button>
+            <button class="location-btn" data-location="Watt Innovation Center">Watt Innovation Center</button>
+            <button class="location-btn" data-location="Cooper Library">Cooper Library</button>
+        </div>
+
         <div id="printersContainer">
             <div class="loading">Loading printer data...</div>
         </div>
@@ -342,60 +371,60 @@
         
         let allPrinters = [];
         let currentFilter = 'all';
+        let currentLocation = 'all';
 
         // Function to parse CSV data with custom structure
         function parseCSV(csv) {
             const lines = csv.split('\n').map(line => line.split(','));
             const printers = [];
             
-            // Find all printer names (they appear in row 1, columns that contain "Mini" or "Adobe")
-            const printerNameRow = 1;
-            const lastUpdateRow = 2;
-            const statusRow = 3;
-            const percentRow = 4;
-            const timeRemainingRow = 5;
-            const printNameLabelRow = 6;
-            const printNameRow = 7;
-            const operationalRow = 8;
-            
-            // Scan through columns to find printers
-            for (let col = 0; col < lines[0].length; col++) {
-                const cellValue = lines[printerNameRow] && lines[printerNameRow][col] ? lines[printerNameRow][col].trim() : '';
-                
-                // Check if this column contains a printer name
-                if (cellValue && (cellValue.includes('Mini') || cellValue.includes('Adobe') || cellValue.includes('TAZ'))) {
-                    const printerName = cellValue;
-                    const statusValue = lines[statusRow] && lines[statusRow][col + 1] ? lines[statusRow][col + 1].trim() : '';
-                    const percentValue = lines[percentRow] && lines[percentRow][col + 1] ? lines[percentRow][col + 1].trim() : '';
-                    const timeValue = lines[timeRemainingRow] && lines[timeRemainingRow][col + 1] ? lines[timeRemainingRow][col + 1].trim() : '';
-                    const printJobValue = lines[printNameRow] && lines[printNameRow][col + 1] ? lines[printNameRow][col + 1].trim() : '';
-                    const lastUpdateValue = lines[lastUpdateRow] && lines[lastUpdateRow][col + 1] ? lines[lastUpdateRow][col + 1].trim() : '';
-                    const operationalValue = lines[operationalRow] && lines[operationalRow][col + 1] ? lines[operationalRow][col + 1].trim() : '';
+            // Scan all rows and columns to find printer names
+            for (let row = 0; row < lines.length; row++) {
+                for (let col = 0; col < lines[row].length; col++) {
+                    const cellValue = lines[row][col] ? lines[row][col].trim() : '';
                     
-                    // Determine printer type/model from name
-                    let model = 'Unknown';
-                    let location = 'Makerspace';
-                    if (printerName.includes('Mini')) {
-                        model = 'Prusa Mini';
-                        location = 'Watt';
-                    } else if (printerName.includes('Adobe')) {
-                        model = 'Prusa Adobe';
-                        location = 'Cooper';
-                    } else if (printerName.includes('TAZ')) {
-                        model = 'LulzBot TAZ';
+                    // Check if this cell contains a printer name
+                    if (cellValue && (cellValue.match(/^Mini \d+$/) || cellValue.match(/^Adobe \d+$/) || cellValue.includes('TAZ'))) {
+                        const printerName = cellValue;
+                        
+                        // Data is in the following rows, next column over
+                        const lastUpdateRow = row + 1;
+                        const statusRow = row + 2;
+                        const percentRow = row + 3;
+                        const timeRemainingRow = row + 4;
+                        const printNameRow = row + 6;
+                        
+                        const statusValue = lines[statusRow] && lines[statusRow][col + 1] ? lines[statusRow][col + 1].trim() : '';
+                        const percentValue = lines[percentRow] && lines[percentRow][col + 1] ? lines[percentRow][col + 1].trim() : '';
+                        const timeValue = lines[timeRemainingRow] && lines[timeRemainingRow][col + 1] ? lines[timeRemainingRow][col + 1].trim() : '';
+                        const printJobValue = lines[printNameRow] && lines[printNameRow][col + 1] ? lines[printNameRow][col + 1].trim() : '';
+                        const lastUpdateValue = lines[lastUpdateRow] && lines[lastUpdateRow][col + 1] ? lines[lastUpdateRow][col + 1].trim() : '';
+                        
+                        // Determine printer type/model and location from name
+                        let model = 'Unknown';
+                        let location = 'Unknown';
+                        if (printerName.includes('Mini')) {
+                            model = 'Prusa Mini';
+                            location = 'Watt Innovation Center';
+                        } else if (printerName.includes('Adobe')) {
+                            model = 'Prusa MK4';
+                            location = 'Cooper Library';
+                        } else if (printerName.includes('TAZ')) {
+                            model = 'LulzBot TAZ';
+                            location = 'Makerspace';
+                        }
+                        
+                        printers.push({
+                            name: printerName,
+                            status: statusValue,
+                            model: model,
+                            location: location,
+                            progress: percentValue,
+                            timeRemaining: timeValue,
+                            currentJob: printJobValue,
+                            lastUpdate: lastUpdateValue
+                        });
                     }
-                    
-                    printers.push({
-                        name: printerName,
-                        status: statusValue,
-                        model: model,
-                        location: location,
-                        progress: percentValue,
-                        timeRemaining: timeValue,
-                        currentJob: printJobValue,
-                        lastUpdate: lastUpdateValue,
-                        operational: operationalValue
-                    });
                 }
             }
             
@@ -485,14 +514,28 @@
             const container = document.getElementById('printersContainer');
             let filteredPrinters = allPrinters;
 
+            // Filter by status
             if (currentFilter !== 'all') {
-                filteredPrinters = allPrinters.filter(p => p.status === currentFilter);
+                filteredPrinters = filteredPrinters.filter(p => p.status === currentFilter);
+            }
+
+            // Filter by location
+            if (currentLocation !== 'all') {
+                filteredPrinters = filteredPrinters.filter(p => p.location === currentLocation);
             }
 
             if (filteredPrinters.length === 0) {
                 container.innerHTML = '<div class="loading">No printers found for this filter.</div>';
                 return;
             }
+
+            // Sort by location, then by name
+            filteredPrinters.sort((a, b) => {
+                if (a.location !== b.location) {
+                    return a.location.localeCompare(b.location);
+                }
+                return a.name.localeCompare(b.name);
+            });
 
             const html = `
                 <div class="printers-grid">
@@ -506,12 +549,12 @@
                             </div>
                             <div class="printer-info">
                                 <div class="printer-info-row">
-                                    <span class="info-label">Model:</span>
-                                    <span class="info-value">${printer.model}</span>
-                                </div>
-                                <div class="printer-info-row">
                                     <span class="info-label">Location:</span>
                                     <span class="info-value">${printer.location}</span>
+                                </div>
+                                <div class="printer-info-row">
+                                    <span class="info-label">Model:</span>
+                                    <span class="info-value">${printer.model}</span>
                                 </div>
                                 ${printer.progress ? `
                                     <div class="printer-info-row">
@@ -561,6 +604,16 @@
                 document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 currentFilter = btn.dataset.filter;
+                displayPrinters();
+            });
+        });
+
+        // Location button event listeners
+        document.querySelectorAll('.location-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.location-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentLocation = btn.dataset.location;
                 displayPrinters();
             });
         });
