@@ -4,15 +4,15 @@
 
 ---
 
-## 🎓 About
+##  About
 
-A real-time dashboard displaying the status of 28 3D printers at the Clemson Makerspace. Features Clemson branding (Orange #F66733 & Purple #522D80) and is optimized for embedding in Google Sites.
+A real-time dashboard displaying the status of the 3D printers at the Clemson Makerspace.
 
 ## 📁 Files
 
 - **printer-status.html** - Main dashboard (requires Google Apps Script setup)
-- **printer-status-local.html** - Local version with CSV file upload
-- **Google-Apps-Script.js** - Backend script for Google Sheets integration
+- **printer-status-local.html** - Local version with CSV file upload basically ignore this I just used it for testing
+- **Google-Apps-Script.js** - Backend script for Google Sheets integration if you wanted to do API calls
 - **Printer Status Update - Dashboard.csv** - Sample CSV data
 
 ## 🚀 Setup Options
@@ -102,13 +102,9 @@ Once you have either version working:
 
 ## 🎨 Features
 
-- ✅ Real-time status display for all 28 printers
+- ✅ Real-time status display for all printers (Currently just the 28 Prusas between watt and cooper)
 - ✅ Color-coded status badges (Green=Available, Orange=In Use, Red=Offline)
 - ✅ Filter by status (All, Available, In Use, Offline)
-- ✅ Live statistics dashboard
-- ✅ Auto-refresh every 30 seconds (with Google Apps Script)
-- ✅ Clean, modern UI with animations
-- ✅ Responsive design (works on mobile, tablet, desktop)
 - ✅ Shows printer progress, time remaining, and current job
 
 ## 📊 Data Structure
@@ -179,4 +175,4 @@ Free to use for Clemson Makerspace and educational purposes.
 
 ---
 
-**Questions?** Check the code comments or console for detailed error messages.
+**Donations** I accept paw points for caniac combos or starbucks
