@@ -289,6 +289,58 @@
             font-size: 0.9em;
         }
 
+        .next-available {
+            background: rgba(246, 103, 51, 0.15);
+            border: 2px solid #F66733;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: white;
+            backdrop-filter: blur(10px);
+        }
+
+        .next-available h2 {
+            font-size: 1.3em;
+            margin-bottom: 10px;
+            color: #F66733;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .next-available-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .next-available-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            color: #1f2937;
+        }
+
+        .next-available-item .printer-name-large {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #F66733;
+            margin-bottom: 5px;
+        }
+
+        .next-available-item .time-info {
+            font-size: 1.1em;
+            color: #522D80;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        .next-available-item .location-info {
+            font-size: 0.9em;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -357,6 +409,8 @@
             <button class="location-btn" data-location="Watt Innovation Center">Watt Innovation Center</button>
             <button class="location-btn" data-location="Cooper Library">Cooper Library</button>
         </div>
+
+        <div id="nextAvailableContainer"></div>
 
         <div id="printersContainer">
             <div class="loading">Loading printer data...</div>
@@ -491,6 +545,7 @@
                 }));
 
                 updateStats();
+                displayNextAvailable();
                 displayPrinters();
                 updateLastUpdatedTime();
             } catch (error) {
@@ -518,6 +573,70 @@
             document.getElementById('availableCount').textContent = available;
             document.getElementById('inUseCount').textContent = inUse;
             document.getElementById('offlineCount').textContent = offline;
+        }
+
+        // Function to display next available printers when none are free
+        function displayNextAvailable() {
+            const container = document.getElementById('nextAvailableContainer');
+            
+            // Check if there are any available printers
+            const availablePrinters = allPrinters.filter(p => p.status === 'available');
+            
+            if (availablePrinters.length > 0) {
+                container.innerHTML = ''; // Clear if there are available printers
+                return;
+            }
+
+            // Get printers that are in use and have time remaining
+            const busyPrinters = allPrinters
+                .filter(p => p.status === 'in-use' && p.timeRemaining)
+                .map(p => {
+                    // Convert time remaining to seconds for sorting
+                    const timeParts = p.timeRemaining.split(':');
+                    const hours = parseInt(timeParts[0]) || 0;
+                    const minutes = parseInt(timeParts[1]) || 0;
+                    const seconds = parseInt(timeParts[2]) || 0;
+                    const totalSeconds = (hours * 3600) + (minutes * 60) + seconds;
+                    
+                    return {
+                        ...p,
+                        totalSeconds: totalSeconds
+                    };
+                })
+                .filter(p => p.totalSeconds > 0)
+                .sort((a, b) => a.totalSeconds - b.totalSeconds);
+
+            if (busyPrinters.length === 0) {
+                container.innerHTML = ''; // No busy printers with time data
+                return;
+            }
+
+            // Get the top 3 soonest available
+            const topThree = busyPrinters.slice(0, 3);
+
+            const html = `
+                <div class="next-available">
+                    <h2>⏱️ All Printers Currently In Use - Next Available:</h2>
+                    <div class="next-available-grid">
+                        ${topThree.map((printer, index) => `
+                            <div class="next-available-item">
+                                <div style="font-size: 0.9em; color: #F66733; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;">
+                                    ${index === 0 ? '🥇 Soonest' : index === 1 ? '🥈 2nd' : '🥉 3rd'}
+                                </div>
+                                <div class="printer-name-large">${printer.name}</div>
+                                <div class="time-info">Free in ${printer.timeRemaining}</div>
+                                <div class="location-info">📍 ${printer.location}</div>
+                                ${printer.currentJob ? `<div class="location-info" style="margin-top: 8px; font-style: italic;">Current: ${printer.currentJob}</div>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div style="margin-top: 15px; font-size: 0.9em; opacity: 0.9;">
+                        💡 Tip: Printers are first-come, first-served. Head to the location early!
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
         }
 
         // Function to display printers
