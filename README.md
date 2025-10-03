@@ -2,6 +2,10 @@
 
 **Live Dashboard:** https://lavahawk.github.io/Makerspace-PrinterStatus/printer-status.html
 
+Example:
+
+![firefox_5HP2UJQwRn-ezgif com-optimize](https://github.com/user-attachments/assets/16d8d951-4e31-423b-819b-58be70fad2c3)
+
 ---
 
 ##  About
