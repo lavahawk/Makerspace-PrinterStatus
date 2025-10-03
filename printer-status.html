@@ -262,6 +262,33 @@
             color: #6b7280;
         }
 
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 12px 0;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #F66733 0%, #522D80 100%);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-bar-fill.complete {
+            background: #10b981;
+        }
+
+        .progress-text {
+            font-size: 0.85em;
+            color: #6b7280;
+            margin-top: 5px;
+            text-align: center;
+        }
+
         .loading {
             text-align: center;
             padding: 50px;
@@ -663,17 +690,42 @@
                 return;
             }
 
-            // Sort by location, then by name
+            // Sort printers intelligently
             filteredPrinters.sort((a, b) => {
+                // First, sort by status priority: available > in-use > offline
+                const statusPriority = { 'available': 1, 'in-use': 2, 'offline': 3 };
+                const statusDiff = statusPriority[a.status] - statusPriority[b.status];
+                if (statusDiff !== 0) return statusDiff;
+
+                // For in-use printers, sort by time remaining (soonest first)
+                if (a.status === 'in-use' && b.status === 'in-use') {
+                    // Convert time to seconds for comparison
+                    const getSeconds = (time) => {
+                        if (!time || time === '0:00:00') return Infinity;
+                        const parts = time.split(':');
+                        return (parseInt(parts[0]) * 3600) + (parseInt(parts[1]) * 60) + parseInt(parts[2]);
+                    };
+                    const timeDiff = getSeconds(a.timeRemaining) - getSeconds(b.timeRemaining);
+                    if (timeDiff !== 0) return timeDiff;
+                }
+
+                // Then by location
                 if (a.location !== b.location) {
                     return a.location.localeCompare(b.location);
                 }
+
+                // Finally by name
                 return a.name.localeCompare(b.name);
             });
 
             const html = `
                 <div class="printers-grid">
-                    ${filteredPrinters.map(printer => `
+                    ${filteredPrinters.map(printer => {
+                        // Parse progress percentage
+                        const progressNum = printer.progress ? parseInt(printer.progress.replace('%', '')) : 0;
+                        const isComplete = progressNum >= 99;
+                        
+                        return `
                         <div class="printer-card status-${printer.status}">
                             <div class="printer-header">
                                 <div class="printer-name">${printer.name}</div>
@@ -681,17 +733,17 @@
                                     ${printer.status.replace('-', ' ')}
                                 </div>
                             </div>
+                            ${printer.status === 'in-use' && printer.progress ? `
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar-fill ${isComplete ? 'complete' : ''}" style="width: ${progressNum}%"></div>
+                                </div>
+                                <div class="progress-text">${printer.progress} Complete</div>
+                            ` : ''}
                             <div class="printer-info">
                                 <div class="printer-info-row">
                                     <span class="info-label">Location:</span>
                                     <span class="info-value">${printer.location}</span>
                                 </div>
-                                ${printer.progress ? `
-                                    <div class="printer-info-row">
-                                        <span class="info-label">Progress:</span>
-                                        <span class="info-value">${printer.progress}</span>
-                                    </div>
-                                ` : ''}
                                 ${printer.timeRemaining && printer.timeRemaining !== '0:00:00' ? `
                                     <div class="printer-info-row">
                                         <span class="info-label">Time Left:</span>
@@ -712,7 +764,7 @@
                                 ` : ''}
                             </div>
                         </div>
-                    `).join('')}
+                    `}).join('')}
                 </div>
             `;
 
