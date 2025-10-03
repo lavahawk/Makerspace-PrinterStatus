@@ -19,7 +19,7 @@ A real-time dashboard displaying the status of the 3D printers at the Clemson Ma
 - **Google-Apps-Script.js** - Backend script for Google Sheets integration if you wanted to do API calls
 - **Printer Status Update - Dashboard.csv** - Sample CSV data
 
-## 🚀 Setup Options
+## Setup Options
 
 ### Option 1: Google Apps Script (Recommended for Live Updates)
 
