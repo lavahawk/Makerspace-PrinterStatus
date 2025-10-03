@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clemson Makerspace - 3D Printer Status</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #F66733 0%, #522D80 100%);
+            padding: 10px;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 0 10px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 8px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1em;
+            opacity: 0.95;
+            font-weight: 500;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            flex: 1;
+            min-width: 120px;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-card.available .stat-number {
+            color: #10b981;
+        }
+
+        .stat-card.in-use .stat-number {
+            color: #f59e0b;
+        }
+
+        .stat-card.offline .stat-number {
+            color: #ef4444;
+        }
+
+        .stat-card.total .stat-number {
+            color: #522D80;
+        }
+
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .filter-btn {
+            padding: 10px 25px;
+            border: none;
+            background: white;
+            color: #F66733;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-btn:hover {
+            background: #F66733;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .filter-btn.active {
+            background: #F66733;
+            color: white;
+        }
+
+        .printers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .printer-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .printer-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .printer-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #F66733 0%, #522D80 100%);
+        }
+
+        .printer-card.status-available::before {
+            background: #10b981;
+        }
+
+        .printer-card.status-in-use::before {
+            background: #f59e0b;
+        }
+
+        .printer-card.status-offline::before {
+            background: #ef4444;
+        }
+
+        .printer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .printer-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-badge.available {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-badge.in-use {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-badge.offline {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .printer-info {
+            color: #6b7280;
+            font-size: 0.95em;
+            line-height: 1.8;
+        }
+
+        .printer-info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .printer-info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #4b5563;
+        }
+
+        .info-value {
+            color: #6b7280;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: white;
+            font-size: 1.2em;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .last-updated {
+            text-align: center;
+            color: white;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            font-size: 0.9em;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .printer-card {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .stats-bar {
+                flex-direction: column;
+            }
+
+            .printers-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Clemson Makerspace</h1>
+            <p>3D Printer Status Dashboard</p>
+        </div>
+
+        <div class="stats-bar" id="statsBar">
+            <div class="stat-card total">
+                <div class="stat-number" id="totalCount">0</div>
+                <div class="stat-label">Total Printers</div>
+            </div>
+            <div class="stat-card available">
+                <div class="stat-number" id="availableCount">0</div>
+                <div class="stat-label">Available</div>
+            </div>
+            <div class="stat-card in-use">
+                <div class="stat-number" id="inUseCount">0</div>
+                <div class="stat-label">In Use</div>
+            </div>
+            <div class="stat-card offline">
+                <div class="stat-number" id="offlineCount">0</div>
+                <div class="stat-label">Offline</div>
+            </div>
+        </div>
+
+        <div class="filters">
+            <button class="filter-btn active" data-filter="all">All Printers</button>
+            <button class="filter-btn" data-filter="available">Available</button>
+            <button class="filter-btn" data-filter="in-use">In Use</button>
+            <button class="filter-btn" data-filter="offline">Offline</button>
+        </div>
+
+        <div id="printersContainer">
+            <div class="loading">Loading printer data...</div>
+        </div>
+
+        <div class="last-updated" id="lastUpdated"></div>
+    </div>
+
+    <script>
+        // Published CSV URL from Google Sheets
+        const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRentt2byRO1VYmR8n2Qx36C0yPHi27MMcL_ABHJ593L4pbqweLxOebFYLnqgFM6Y4EziZmQOoqdPwn/pub?output=csv';
+        
+        let allPrinters = [];
+        let currentFilter = 'all';
+
+        // Function to parse CSV data with custom structure
+        function parseCSV(csv) {
+            const lines = csv.split('\n').map(line => line.split(','));
+            const printers = [];
+            
+            // Find all printer names (they appear in row 1, columns that contain "Mini" or "Adobe")
+            const printerNameRow = 1;
+            const lastUpdateRow = 2;
+            const statusRow = 3;
+            const percentRow = 4;
+            const timeRemainingRow = 5;
+            const printNameLabelRow = 6;
+            const printNameRow = 7;
+            const operationalRow = 8;
+            
+            // Scan through columns to find printers
+            for (let col = 0; col < lines[0].length; col++) {
+                const cellValue = lines[printerNameRow] && lines[printerNameRow][col] ? lines[printerNameRow][col].trim() : '';
+                
+                // Check if this column contains a printer name
+                if (cellValue && (cellValue.includes('Mini') || cellValue.includes('Adobe') || cellValue.includes('TAZ'))) {
+                    const printerName = cellValue;
+                    const statusValue = lines[statusRow] && lines[statusRow][col + 1] ? lines[statusRow][col + 1].trim() : '';
+                    const percentValue = lines[percentRow] && lines[percentRow][col + 1] ? lines[percentRow][col + 1].trim() : '';
+                    const timeValue = lines[timeRemainingRow] && lines[timeRemainingRow][col + 1] ? lines[timeRemainingRow][col + 1].trim() : '';
+                    const printJobValue = lines[printNameRow] && lines[printNameRow][col + 1] ? lines[printNameRow][col + 1].trim() : '';
+                    const lastUpdateValue = lines[lastUpdateRow] && lines[lastUpdateRow][col + 1] ? lines[lastUpdateRow][col + 1].trim() : '';
+                    const operationalValue = lines[operationalRow] && lines[operationalRow][col + 1] ? lines[operationalRow][col + 1].trim() : '';
+                    
+                    // Determine printer type/model from name
+                    let model = 'Unknown';
+                    let location = 'Makerspace';
+                    if (printerName.includes('Mini')) {
+                        model = 'Prusa Mini';
+                        location = 'Watt';
+                    } else if (printerName.includes('Adobe')) {
+                        model = 'Prusa Adobe';
+                        location = 'Cooper';
+                    } else if (printerName.includes('TAZ')) {
+                        model = 'LulzBot TAZ';
+                    }
+                    
+                    printers.push({
+                        name: printerName,
+                        status: statusValue,
+                        model: model,
+                        location: location,
+                        progress: percentValue,
+                        timeRemaining: timeValue,
+                        currentJob: printJobValue,
+                        lastUpdate: lastUpdateValue,
+                        operational: operationalValue
+                    });
+                }
+            }
+            
+            return printers;
+        }
+
+        // Function to normalize status
+        function normalizeStatus(status) {
+            if (!status) return 'offline';
+            status = status.toLowerCase().trim();
+            if (status.includes('idle') || status.includes('ready') || status.includes('finished')) {
+                return 'available';
+            } else if (status.includes('printing') || status.includes('busy')) {
+                return 'in-use';
+            } else {
+                return 'offline';
+            }
+        }
+        
+        // Function to clean printer job name
+        function cleanJobName(jobName) {
+            if (!jobName) return '';
+            // Remove file extensions and technical suffixes
+            return jobName
+                .replace(/_0\.\d+n_.*\.(bgcode|gcode)$/i, '')
+                .replace(/\.(bgcode|gcode|stl)$/i, '')
+                .replace(/_/g, ' ')
+                .trim();
+        }
+
+        // Function to fetch printer data
+        async function fetchPrinterData() {
+            try {
+                const response = await fetch(SHEET_URL);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch data from Google Sheets');
+                }
+                
+                const csvData = await response.text();
+                const parsedData = parseCSV(csvData);
+                
+                // Map the data to printer objects with normalized status
+                allPrinters = parsedData.map(printer => ({
+                    name: printer.name,
+                    status: normalizeStatus(printer.status),
+                    model: printer.model,
+                    location: printer.location,
+                    material: 'PLA',
+                    progress: printer.progress,
+                    timeRemaining: printer.timeRemaining,
+                    currentJob: cleanJobName(printer.currentJob),
+                    lastUpdate: printer.lastUpdate
+                }));
+
+                updateStats();
+                displayPrinters();
+                updateLastUpdatedTime();
+            } catch (error) {
+                console.error('Error fetching printer data:', error);
+                document.getElementById('printersContainer').innerHTML = `
+                    <div class="error">
+                        <h3>Unable to load printer data</h3>
+                        <p>${error.message}</p>
+                        <p style="margin-top: 10px; font-size: 0.9em;">
+                            The dashboard will automatically retry loading data.
+                        </p>
+                    </div>
+                `;
+            }
+        }
+
+        // Function to update statistics
+        function updateStats() {
+            const total = allPrinters.length;
+            const available = allPrinters.filter(p => p.status === 'available').length;
+            const inUse = allPrinters.filter(p => p.status === 'in-use').length;
+            const offline = allPrinters.filter(p => p.status === 'offline').length;
+
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('availableCount').textContent = available;
+            document.getElementById('inUseCount').textContent = inUse;
+            document.getElementById('offlineCount').textContent = offline;
+        }
+
+        // Function to display printers
+        function displayPrinters() {
+            const container = document.getElementById('printersContainer');
+            let filteredPrinters = allPrinters;
+
+            if (currentFilter !== 'all') {
+                filteredPrinters = allPrinters.filter(p => p.status === currentFilter);
+            }
+
+            if (filteredPrinters.length === 0) {
+                container.innerHTML = '<div class="loading">No printers found for this filter.</div>';
+                return;
+            }
+
+            const html = `
+                <div class="printers-grid">
+                    ${filteredPrinters.map(printer => `
+                        <div class="printer-card status-${printer.status}">
+                            <div class="printer-header">
+                                <div class="printer-name">${printer.name}</div>
+                                <div class="status-badge ${printer.status}">
+                                    ${printer.status.replace('-', ' ')}
+                                </div>
+                            </div>
+                            <div class="printer-info">
+                                <div class="printer-info-row">
+                                    <span class="info-label">Model:</span>
+                                    <span class="info-value">${printer.model}</span>
+                                </div>
+                                <div class="printer-info-row">
+                                    <span class="info-label">Location:</span>
+                                    <span class="info-value">${printer.location}</span>
+                                </div>
+                                ${printer.progress ? `
+                                    <div class="printer-info-row">
+                                        <span class="info-label">Progress:</span>
+                                        <span class="info-value">${printer.progress}</span>
+                                    </div>
+                                ` : ''}
+                                ${printer.timeRemaining && printer.timeRemaining !== '0:00:00' ? `
+                                    <div class="printer-info-row">
+                                        <span class="info-label">Time Left:</span>
+                                        <span class="info-value">${printer.timeRemaining}</span>
+                                    </div>
+                                ` : ''}
+                                ${printer.currentJob ? `
+                                    <div class="printer-info-row">
+                                        <span class="info-label">Current Job:</span>
+                                        <span class="info-value" style="word-break: break-word;">${printer.currentJob}</span>
+                                    </div>
+                                ` : ''}
+                                ${printer.lastUpdate ? `
+                                    <div class="printer-info-row">
+                                        <span class="info-label">Last Update:</span>
+                                        <span class="info-value" style="font-size: 0.85em;">${printer.lastUpdate}</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // Function to update last updated time
+        function updateLastUpdatedTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            const dateString = now.toLocaleDateString();
+            document.getElementById('lastUpdated').textContent = 
+                `Last Updated: ${dateString} at ${timeString}`;
+        }
+
+        // Filter button event listeners
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.dataset.filter;
+                displayPrinters();
+            });
+        });
+
+        // Initial load and auto-refresh every 30 seconds
+        fetchPrinterData();
+        setInterval(fetchPrinterData, 30000);
+    </script>
+</body>
+</html>
