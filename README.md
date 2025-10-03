@@ -1,6 +1,12 @@
-# Clemson Makerspace 3D Printer Status Dashboard
+# Clemson Makerspace Printer Status Dashboard
 
-A clean, modern web dashboard to display real-time status of 28 3D printers at the Clemson Makerspace.
+**Live Dashboard:** https://lavahawk.github.io/Makerspace-PrinterStatus/printer-status.html
+
+---
+
+## 🎓 About
+
+A real-time dashboard displaying the status of 28 3D printers at the Clemson Makerspace. Features Clemson branding (Orange #F66733 & Purple #522D80) and is optimized for embedding in Google Sites.
 
 ## 📁 Files
 
