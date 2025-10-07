@@ -12,6 +12,9 @@ Example:
 
 A real-time dashboard displaying the status of the 3D printers at the Clemson Makerspace.
 
+The script works currently from reading the excel sheet located here: https://docs.google.com/spreadsheets/d/13ukI4J5AQtzbRLEfyYABIhA7jCMH7g53veYQPVC5CWU
+and reformating it into an easy to view and nice dashboard hosted on my github page.
+
 ## 📁 Files
 
 - **printer-status.html** - Main dashboard (requires Google Apps Script setup)
